@@ -2,17 +2,22 @@
 from .models import User, get_todays_recent_posts
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 
-Flask(__name__)
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    posts = get_todays_recent_posts()
+    return render_template('index.html', posts=posts)
 
 # processes registration post or displays registration page
 # includes error handling for username and password details
 # returns the user to / if registration successful
-@app.route('register',methods = ['GET','POST'])
+@app.route('/register',methods = ['GET','POST'])
 def register():
-	if request.method == 'POST'
+	if request.method == 'POST':
 		username = request.form['username']
 		password = request.form['password']
-		
+
 		if len(username) < 1:
 			flash('Your username must be at least one character.')
 		elif len(password) < 5:
@@ -23,13 +28,13 @@ def register():
 			session['username'] = username
 			flash('Logged in')
 			return redirect(url_for('index'))
-	return render_template(register.html)
+	return render_template('register.html')
 
 # processes the login request or displays login page
 # redirects user to / if login successful
-@app.route('login',methods = ['GET','POST'])
+@app.route('/login',methods = ['GET','POST'])
 def login():
-	if request.method = 'POST':
+	if request.method == 'POST':
 		username = request.form['username']
 		password = request.method['password']
 
@@ -42,7 +47,7 @@ def login():
 	return render_template('login.html')
 
 # add post; stores post into vars; checks error handling; creates post against username if successful
-app.route('/add_post', methods = ['POST']
+app.route('/add_post', methods = ['POST'])
 def add_post():
 	title = request.form['title']
 	tags = request.form['tags']
@@ -71,4 +76,41 @@ def like_post(post_id):
 	flash("Liked post")
 	return redirect(request.referrer)
 
+# profile view
+app.route('/profile/<profile_name>')
+def profile(username):
+	#tells me the username of the logged in user
+	logged_in_username = session.get(username)
 
+	#tells me who's profile i am looking at
+	user_being_viewed_username = username
+
+	#
+	user_being_viewed = User(user_being_viewed_username)
+	posts = user_being_viewed.get_recent_posts()
+
+	similar = []
+	common = []
+
+	if logged_in_username:
+		logged_in_user = User(logged_in_username)
+
+		if logged_in_user.username == user_being_viewed_username:
+			similar = logged_in_user.get_similar_users()
+		else:
+			common = logged_in_user.get_commonality_of_user(user_being_viewed)
+
+	return render_template(
+		'profile.html',
+		username=username,
+		posts=posts,
+		similar=similar,
+		common=common
+	)
+
+# logout
+app.route('/logout', methods=['GET'])
+def logout():
+	session.pop('username', None)
+	flash('Logged out')
+	return redirectfor(url_for('index'))
